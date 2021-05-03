@@ -44,7 +44,16 @@ public class TranslationService {
 
         Map<String, Object> addressMap = new HashMap<>();
         Map<String, Object> localityMap = new HashMap<>();
-        localityMap.put("area",property.getAddress().getLocality().getArea());
+
+        /**
+         * As the area value is not stored in the Database while creation of property
+         * (area column is not present in database)
+         * we cannot retrive it in the below line so putting area value as dummy data for testing 
+         * it can be replaced/removed
+         */
+        // localityMap.put("area",property.getAddress().getLocality().getArea());
+        localityMap.put("area",property.getAddress().getCity());
+        
         localityMap.put("code",property.getAddress().getLocality().getCode());
         addressMap.put("locality",localityMap);
 

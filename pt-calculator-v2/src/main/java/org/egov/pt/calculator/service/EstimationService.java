@@ -752,6 +752,15 @@ public class EstimationService {
 		setTaxperiodForCalculation(requestInfo,property.getTenantId(),calculation);
 		BigDecimal fee = getFeeFromSlabs(property, calculation, requestInfo,additionalDetails);
 		calculation.setTaxAmount(fee);
+		
+		/**
+		 * Adding the data inside the "Calculation" as no data is provided and the below entered is dummy data
+		 * @param fromDate
+		 * @param toDate
+		 */
+		calculation.setFromDate(1617215400000L);
+		calculation.setToDate(1648751399000L);
+
 		postProcessTheFee(requestInfo,property,calculation,additionalDetails);
 		feeStructure.put(property.getAcknowldgementNumber(), calculation);
 		searchDemand(requestInfo,property,calculation,feeStructure);
