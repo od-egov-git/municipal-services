@@ -187,63 +187,95 @@ public class EstimationService {
 		/*
 		 * by default land should get only one slab from database per tenantId
 		 */
-		if (PT_TYPE_VACANT_LAND.equalsIgnoreCase(detail.getPropertyType()) && filteredBillingSlabs.size() != 1)
-			throw new CustomException(PT_ESTIMATE_BILLINGSLABS_UNMATCH_VACANCT,PT_ESTIMATE_BILLINGSLABS_UNMATCH_VACANT_MSG
-					.replace("{count}",String.valueOf(filteredBillingSlabs.size())));
-
-		else if (PT_TYPE_VACANT_LAND.equalsIgnoreCase(detail.getPropertyType())) {
-			taxAmt = taxAmt.add(BigDecimal.valueOf(filteredBillingSlabs.get(0).getUnitRate() * detail.getLandArea()));
+		List<TaxHeadEstimate> taxHeadEstimates;
+		
+		validateManualAmounts(criteria);
+		if(BigDecimal.ZERO.compareTo(criteria.getAssessmentAmount()) < 0
+				|| BigDecimal.ZERO.compareTo(criteria.getFireCessAmount()) < 0
+				|| BigDecimal.ZERO.compareTo(criteria.getCancerCessAmount()) < 0
+				|| BigDecimal.ZERO.compareTo(criteria.getAdhocPenaltyAmount()) < 0) {
+			taxHeadEstimates =  getEstimatesForTax(criteria);
 		} else {
+			if (PT_TYPE_VACANT_LAND.equalsIgnoreCase(detail.getPropertyType()) && filteredBillingSlabs.size() != 1)
+				throw new CustomException(PT_ESTIMATE_BILLINGSLABS_UNMATCH_VACANCT,PT_ESTIMATE_BILLINGSLABS_UNMATCH_VACANT_MSG
+						.replace("{count}",String.valueOf(filteredBillingSlabs.size())));
 
-			double unBuiltRate = 0.0;
-			int groundUnitsCount = 0;
-			Double groundUnitsArea = 0.0;
-			int i = 0;
+			else if (PT_TYPE_VACANT_LAND.equalsIgnoreCase(detail.getPropertyType())) {
+				taxAmt = taxAmt.add(BigDecimal.valueOf(filteredBillingSlabs.get(0).getUnitRate() * detail.getLandArea()));
+			} else {
 
-			for (Unit unit : detail.getUnits()) {
+				double unBuiltRate = 0.0;
+				int groundUnitsCount = 0;
+				Double groundUnitsArea = 0.0;
+				int i = 0;
 
-				BillingSlab slab = getSlabForCalc(filteredBillingSlabs, unit);
-				BigDecimal currentUnitTax = getTaxForUnit(slab, unit);
-				billingSlabIds.add(slab.getId()+"|"+i);
+				for (Unit unit : detail.getUnits()) {
+
+					BillingSlab slab = getSlabForCalc(filteredBillingSlabs, unit);
+					BigDecimal currentUnitTax = getTaxForUnit(slab, unit);
+					billingSlabIds.add(slab.getId()+"|"+i);
+
+					/*
+					* counting the number of units & total area in ground floor for unbuilt area
+					* tax calculation
+					*/
+					if (unit.getFloorNo().equalsIgnoreCase("0")) {
+						groundUnitsCount += 1;
+						groundUnitsArea += unit.getUnitArea();
+						if (null != slab.getUnBuiltUnitRate())
+							unBuiltRate += slab.getUnBuiltUnitRate();
+					}
+					taxAmt = taxAmt.add(currentUnitTax);
+					usageExemption = usageExemption
+							.add(getExemption(unit, currentUnitTax, assessmentYear, propertyBasedExemptionMasterMap));
+					i++;
+				}
+				/*
+				* making call to get unbuilt area tax estimate
+				*/
+				taxAmt = taxAmt.add(getUnBuiltRate(detail, unBuiltRate, groundUnitsCount, groundUnitsArea));
 
 				/*
-				 * counting the number of units & total area in ground floor for unbuilt area
-				 * tax calculation
-				 */
-				if (unit.getFloorNo().equalsIgnoreCase("0")) {
-					groundUnitsCount += 1;
-					groundUnitsArea += unit.getUnitArea();
-					if (null != slab.getUnBuiltUnitRate())
-						unBuiltRate += slab.getUnBuiltUnitRate();
-				}
-				taxAmt = taxAmt.add(currentUnitTax);
-				usageExemption = usageExemption
-						.add(getExemption(unit, currentUnitTax, assessmentYear, propertyBasedExemptionMasterMap));
-				i++;
+				* special case to handle property with one unit
+				*/
+				if (detail.getUnits().size() == 1)
+					usageExemption = getExemption(detail.getUnits().get(0), taxAmt, assessmentYear,
+							propertyBasedExemptionMasterMap);
 			}
-			/*
-			 * making call to get unbuilt area tax estimate
-			 */
-			taxAmt = taxAmt.add(getUnBuiltRate(detail, unBuiltRate, groundUnitsCount, groundUnitsArea));
 
-			/*
-			 * special case to handle property with one unit
-			 */
-			if (detail.getUnits().size() == 1)
-				usageExemption = getExemption(detail.getUnits().get(0), taxAmt, assessmentYear,
-						propertyBasedExemptionMasterMap);
+			taxHeadEstimates =  getEstimatesForTax(requestInfo,taxAmt, usageExemption, property, propertyBasedExemptionMasterMap,
+					timeBasedExemptionMasterMap,masterMap);
 		}
-
-		List<TaxHeadEstimate> taxHeadEstimates =  getEstimatesForTax(requestInfo,taxAmt, usageExemption, property, propertyBasedExemptionMasterMap,
-				timeBasedExemptionMasterMap,masterMap);
-
-
+		
 		Map<String,List> estimatesAndBillingSlabs = new HashMap<>();
 		estimatesAndBillingSlabs.put("estimates",taxHeadEstimates);
 		estimatesAndBillingSlabs.put("billingSlabIds",billingSlabIds);
 
 		return estimatesAndBillingSlabs;
 
+	}
+
+	private void validateManualAmounts(CalculationCriteria criteria) {
+		criteria.setAssessmentAmount(criteria.getAssessmentAmount()==null? BigDecimal.ZERO : criteria.getAssessmentAmount());
+		criteria.setCancerCessAmount(criteria.getCancerCessAmount()==null? BigDecimal.ZERO : criteria.getCancerCessAmount());
+		criteria.setAdhocPenaltyAmount(criteria.getAdhocPenaltyAmount()==null? BigDecimal.ZERO : criteria.getAdhocPenaltyAmount());
+		criteria.setAdhocRebateAmount(criteria.getAdhocRebateAmount()==null? BigDecimal.ZERO : criteria.getAdhocRebateAmount());
+		criteria.setFireCessAmount(criteria.getFireCessAmount()==null? BigDecimal.ZERO : criteria.getFireCessAmount());
+		criteria.setOwnerExemptionAmount(criteria.getOwnerExemptionAmount()==null? BigDecimal.ZERO : criteria.getOwnerExemptionAmount());
+		criteria.setUsageExemptionAmount(criteria.getUsageExemptionAmount()==null? BigDecimal.ZERO : criteria.getUsageExemptionAmount());
+	}
+
+	private List<TaxHeadEstimate> getEstimatesForTax(CalculationCriteria criteria) {
+		
+		List<TaxHeadEstimate> estimates = new ArrayList<>();
+		estimates.add(TaxHeadEstimate.builder().taxHeadCode(PT_TAX).estimateAmount(criteria.getAssessmentAmount()).build());
+		estimates.add(TaxHeadEstimate.builder().taxHeadCode(PT_UNIT_USAGE_EXEMPTION).estimateAmount(criteria.getUsageExemptionAmount().negate()).build());
+		estimates.add(TaxHeadEstimate.builder().taxHeadCode(PT_OWNER_EXEMPTION).estimateAmount(criteria.getOwnerExemptionAmount().negate()).build());
+		estimates.add(TaxHeadEstimate.builder().taxHeadCode(PT_FIRE_CESS).estimateAmount(criteria.getFireCessAmount()).build());
+		estimates.add(TaxHeadEstimate.builder().taxHeadCode(PT_CANCER_CESS).estimateAmount(criteria.getCancerCessAmount()).build());
+		estimates.add(TaxHeadEstimate.builder().taxHeadCode(PT_ADHOC_PENALTY).estimateAmount(criteria.getAdhocPenaltyAmount()).build());
+		estimates.add(TaxHeadEstimate.builder().taxHeadCode(PT_ADHOC_REBATE).estimateAmount(criteria.getAdhocRebateAmount().negate()).build());
+		return estimates;
 	}
 
 	/**

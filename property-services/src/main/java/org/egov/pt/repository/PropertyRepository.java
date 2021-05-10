@@ -15,6 +15,7 @@ import org.egov.pt.models.user.User;
 import org.egov.pt.models.user.UserDetailResponse;
 import org.egov.pt.models.user.UserSearchRequest;
 import org.egov.pt.repository.builder.PropertyQueryBuilder;
+import org.egov.pt.repository.rowmapper.AssessmentPropertyRowMapper;
 import org.egov.pt.repository.rowmapper.OpenPropertyRowMapper;
 import org.egov.pt.repository.rowmapper.PropertyAuditRowMapper;
 import org.egov.pt.repository.rowmapper.PropertyRowMapper;
@@ -45,6 +46,9 @@ public class PropertyRepository {
 	
 	@Autowired
 	private PropertyAuditRowMapper auditRowMapper;
+
+	@Autowired
+	private AssessmentPropertyRowMapper assessRowMapper;
 	
 	@Autowired
 	private PropertyUtil util;
@@ -68,6 +72,14 @@ public class PropertyRepository {
 			return jdbcTemplate.query(query, preparedStmtList.toArray(), openRowMapper);
 		else
 			return jdbcTemplate.query(query, preparedStmtList.toArray(), rowMapper);
+	}
+
+	public List<Property> getAssessment(PropertyCriteria criteria) {
+
+		List<Object> preparedStmtList = new ArrayList<>();
+		Boolean isPlainSearch = true;
+		String query = queryBuilder.getAssessmentSearchQuery(criteria, preparedStmtList, isPlainSearch);
+		return jdbcTemplate.query(query, preparedStmtList.toArray(), assessRowMapper);
 	}
 
 	public List<Property> getPropertiesForBulkSearch(PropertyCriteria criteria) {
@@ -136,6 +148,10 @@ public class PropertyRepository {
 
 			properties = getProperties(criteria, isOpenSearch);
 		}
+
+		// Adding assessment application on the list
+		properties.addAll(getAssessment(criteria));
+		
 		if (CollectionUtils.isEmpty(properties))
 			return Collections.emptyList();
 

@@ -1,5 +1,6 @@
 package org.egov.pt.models;
 
+import java.math.BigDecimal;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -77,6 +78,26 @@ public class Assessment {
 	@JsonProperty("workflow")
 	private ProcessInstance workflow;
 
+	@JsonProperty("assessmentAmount")
+	private BigDecimal assessmentAmount;
+	
+	@JsonProperty("usageExemptionAmount")
+	private BigDecimal usageExemptionAmount;
+	
+	@JsonProperty("ownerExemptionAmount")
+	private BigDecimal ownerExemptionAmount;
+	
+	@JsonProperty("fireCessAmount")
+	private BigDecimal fireCessAmount;
+	
+	@JsonProperty("cancerCessAmount")
+	private BigDecimal cancerCessAmount;
+	
+	@JsonProperty("adhocPenaltyAmount")
+	private BigDecimal adhocPenaltyAmount;
+	
+	@JsonProperty("adhocRebateAmount")
+	private BigDecimal adhocRebateAmount;
 
 	public enum Source {
 

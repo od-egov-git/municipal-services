@@ -171,6 +171,14 @@ public class TranslationService {
         calculationCriteria.put("property", propertyMap);
         calculationCriteria.put("tenantId", property.getTenantId());
 
+        calculationCriteria.put("assessmentAmount", assessmentRequest.getAssessment().getAssessmentAmount());
+        calculationCriteria.put("usageExemptionAmount", assessmentRequest.getAssessment().getUsageExemptionAmount());
+        calculationCriteria.put("ownerExemptionAmount", assessmentRequest.getAssessment().getOwnerExemptionAmount());
+        calculationCriteria.put("fireCessAmount", assessmentRequest.getAssessment().getFireCessAmount());
+        calculationCriteria.put("cancerCessAmount", assessmentRequest.getAssessment().getCancerCessAmount());
+        calculationCriteria.put("adhocPenaltyAmount", assessmentRequest.getAssessment().getAdhocPenaltyAmount());
+        calculationCriteria.put("adhocRebateAmount", assessmentRequest.getAssessment().getAdhocRebateAmount());
+
         Map<String, Object> calculationReq = new HashMap<>();
         calculationReq.put("RequestInfo", requestInfo);
         calculationReq.put("CalculationCriteria", Collections.singletonList(calculationCriteria));

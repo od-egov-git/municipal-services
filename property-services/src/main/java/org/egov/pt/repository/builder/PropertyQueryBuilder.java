@@ -38,6 +38,9 @@ public class PropertyQueryBuilder {
 	private static String propertySelectValues = "property.id as pid, property.propertyid, property.tenantid as ptenantid, surveyid, accountid, oldpropertyid, property.status as propertystatus, acknowldgementnumber, propertytype, ownershipcategory,property.usagecategory as pusagecategory, creationreason, nooffloors, landarea, property.superbuiltuparea as propertysbpa, linkedproperties, source, channel, property.createdby as pcreatedby, property.lastmodifiedby as plastmodifiedby, property.createdtime as pcreatedtime,"
 			+ " property.lastmodifiedtime as plastmodifiedtime, property.additionaldetails as padditionaldetails, (CASE WHEN property.status='ACTIVE' then 0 WHEN property.status='INWORKFLOW' then 1 WHEN property.status='INACTIVE' then 2 ELSE 3 END) as statusorder, ";
 
+	private static String assessmentSelectValues = "property.id as pid, property.propertyid, property.tenantid as ptenantid, surveyid, accountid, oldpropertyid, assessment.status as propertystatus, assessment.assessmentnumber acknowldgementnumber, propertytype, ownershipcategory,property.usagecategory as pusagecategory, 'ASSESSMENT' as creationreason, nooffloors, landarea, property.superbuiltuparea as propertysbpa, linkedproperties, property.source, property.channel, assessment.createdby as pcreatedby, assessment.lastmodifiedby as plastmodifiedby, assessment.createdtime as pcreatedtime,"
+			+ " assessment.lastmodifiedtime as plastmodifiedtime, property.additionaldetails as padditionaldetails, (CASE WHEN assessment.status='ACTIVE' then 0 WHEN assessment.status='INWORKFLOW' then 1 WHEN assessment.status='INACTIVE' then 2 ELSE 3 END) as statusorder, ";
+
 	private static String addressSelectValues = "address.tenantid as adresstenantid, address.id as addressid, address.propertyid as addresspid, latitude, longitude, doorno, plotno, buildingname, street, landmark, city, pincode, locality, district, region, state, country, address.createdby as addresscreatedby, address.lastmodifiedby as addresslastmodifiedby, address.createdtime as addresscreatedtime, address.lastmodifiedtime as addresslastmodifiedtime, address.additionaldetails as addressadditionaldetails, " ;
 
 	private static String institutionSelectValues = "institution.id as institutionid,institution.propertyid as institutionpid, institution.tenantid as institutiontenantid, institution.name as institutionname, institution.type as institutiontype, designation, nameofauthorizedperson, institution.createdby as institutioncreatedby, institution.lastmodifiedby as institutionlastmodifiedby, institution.createdtime as institutioncreatedtime, institution.lastmodifiedtime as institutionlastmodifiedtime, ";
@@ -82,7 +85,39 @@ public class PropertyQueryBuilder {
 			
 			+ " WHERE ";
 	
-
+	private static final String ASMT_QUERY = SELECT 
+			
+			+	assessmentSelectValues    
+			
+			+   addressSelectValues     
+			
+			+   institutionSelectValues 
+			
+			+   propertyDocSelectValues
+			
+			+   ownerSelectValues 
+			
+			+   ownerDocSelectValues  
+			
+			+   UnitSelectValues
+			
+			+   " FROM EG_PT_PROPERTY property " 
+			
+			+   INNER_JOIN +  " EG_PT_ASMT_ASSESSMENT assessment ON property.propertyid = assessment.propertyid "
+			
+			+   INNER_JOIN +  " EG_PT_ADDRESS address         ON property.id = address.propertyid " 
+			
+			+   LEFT_JOIN  +  " EG_PT_INSTITUTION institution ON property.id = institution.propertyid " 
+			
+			+   LEFT_JOIN  +  " EG_PT_DOCUMENT pdoc           ON property.id = pdoc.entityid "
+			
+			+   INNER_JOIN +  " EG_PT_OWNER owner             ON property.id = owner.propertyid " 
+			
+			+   LEFT_JOIN  +  " EG_PT_DOCUMENT owndoc         ON owner.ownerinfouuid = owndoc.entityid "
+			
+			+	LEFT_JOIN  +  " EG_PT_UNIT unit		          ON property.id =  unit.propertyid "
+			
+			+ " WHERE ";
 
 	private final String paginationWrapper = "SELECT * FROM "
 			+ "(SELECT *, DENSE_RANK() OVER (ORDER BY plastmodifiedtime DESC, pid) offset_ FROM " + "({})" + " result) result_offset "
@@ -230,6 +265,123 @@ public class PropertyQueryBuilder {
 		String withClauseQuery = WITH_CLAUSE_QUERY.replace(REPLACE_STRING, builder);
 		return addPaginationWrapper(withClauseQuery, preparedStmtList, criteria);
 	}
+
+
+public String getAssessmentSearchQuery(PropertyCriteria criteria, List<Object> preparedStmtList,Boolean isPlainSearch) {
+
+		Boolean isEmpty = CollectionUtils.isEmpty(criteria.getPropertyIds())
+					&& CollectionUtils.isEmpty(criteria.getAcknowledgementIds())
+					&& CollectionUtils.isEmpty(criteria.getOldpropertyids())
+					&& CollectionUtils.isEmpty(criteria.getUuids())
+					&& null == criteria.getMobileNumber()
+					&& null == criteria.getName();
+		
+		if(isEmpty)
+			throw new CustomException("EG_PT_SEARCH_ERROR"," No criteria given for the property search");
+		
+		StringBuilder builder = new StringBuilder(ASMT_QUERY);
+		Boolean appendAndQuery = false;
+		if(isPlainSearch)
+		{
+			Set<String> tenantIds = criteria.getTenantIds();
+			if(!CollectionUtils.isEmpty(tenantIds))
+			{
+				addClauseIfRequired(preparedStmtList,builder);
+				builder.append("property.tenantid IN (").append(createQuery(tenantIds)).append(")");
+				addToPreparedStatement(preparedStmtList,tenantIds);
+			}
+		}
+		else
+		{
+			if(criteria.getTenantId()!=null)
+			{
+				addClauseIfRequired(preparedStmtList,builder);
+				builder.append("property.tenantid=?");
+				preparedStmtList.add(criteria.getTenantId());
+			}
+		}
+		if (criteria.getFromDate() != null)
+		{
+			addClauseIfRequired(preparedStmtList,builder);
+			// If user does NOT specify toDate, take today's date as the toDate by default
+			if (criteria.getToDate() == null)
+			{
+				criteria.setToDate(Instant.now().toEpochMilli());
+			}
+			builder.append("property.createdTime BETWEEN ? AND ?");
+			preparedStmtList.add(criteria.getFromDate());
+			preparedStmtList.add(criteria.getToDate());
+		}
+		else
+		{
+			if(criteria.getToDate()!=null)
+			{
+				throw new CustomException("INVALID SEARCH", "From Date should be mentioned first");
+			}
+		}
+
+		if (null != criteria.getStatus()) {
+
+			if(appendAndQuery)
+				builder.append(AND_QUERY);
+			builder.append("property.status = ?");
+			preparedStmtList.add(criteria.getStatus());
+			appendAndQuery= true;
+		}
+		
+		if (null != criteria.getLocality()) {
+
+			if(appendAndQuery)
+				builder.append(AND_QUERY);
+			builder.append("address.locality = ?");
+			preparedStmtList.add(criteria.getLocality());
+			appendAndQuery= true;
+		}
+
+		Set<String> propertyIds = criteria.getPropertyIds();
+		if (!CollectionUtils.isEmpty(propertyIds)) {
+
+			if(appendAndQuery)
+				builder.append(AND_QUERY);
+			builder.append("property.propertyid IN (").append(createQuery(propertyIds)).append(")");
+			addToPreparedStatementWithUpperCase(preparedStmtList, propertyIds);
+			appendAndQuery= true;
+		}
+		
+		Set<String> acknowledgementIds = criteria.getAcknowledgementIds();
+		if (!CollectionUtils.isEmpty(acknowledgementIds)) {
+
+			if(appendAndQuery)
+				builder.append(AND_QUERY);
+			builder.append("assessment.assessmentnumber IN (").append(createQuery(acknowledgementIds)).append(")");
+			addToPreparedStatementWithUpperCase(preparedStmtList, acknowledgementIds);
+			appendAndQuery= true;
+		}
+		
+		Set<String> uuids = criteria.getUuids();
+		if (!CollectionUtils.isEmpty(uuids)) {
+
+			if(appendAndQuery)
+				builder.append(AND_QUERY);
+			builder.append("property.id IN (").append(createQuery(uuids)).append(")");
+			addToPreparedStatement(preparedStmtList, uuids);
+			appendAndQuery= true;
+		}
+
+		Set<String> oldpropertyids = criteria.getOldpropertyids();
+		if (!CollectionUtils.isEmpty(oldpropertyids)) {
+
+			if(appendAndQuery)
+				builder.append(AND_QUERY);
+			builder.append("property.oldpropertyid IN (").append(createQuery(oldpropertyids)).append(")");
+			addToPreparedStatement(preparedStmtList, oldpropertyids);
+			appendAndQuery= true;
+		}
+
+		String withClauseQuery = WITH_CLAUSE_QUERY.replace(REPLACE_STRING, builder);
+		return addPaginationWrapper(withClauseQuery, preparedStmtList, criteria);
+	}
+
 
 
 	public String getPropertyQueryForBulkSearch(PropertyCriteria criteria, List<Object> preparedStmtList,Boolean isPlainSearch) {

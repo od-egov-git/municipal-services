@@ -47,6 +47,9 @@ public class Configurations {
 	@Value("${egov.assessmentservice.search.endpoint}")
 	private String	assessmentSearchEndpoint;
 	
+	@Value("${egov.payment.search.employee.endpoint}")
+	private String	PaymentSearchEmployeeEndpoint;
+
 	// billing service
 	@Value("${egov.billingservice.host}")
 	private String billingServiceHost;
