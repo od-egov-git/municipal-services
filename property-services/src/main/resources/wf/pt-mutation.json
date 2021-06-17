@@ -69,7 +69,7 @@
                     "actions": [
                         {
                             "tenantId": "od",
-                            "action": "SENT_BACK_TO_CITIZEN",
+                            "action": "SEND_BACK_TO_CITIZEN",
                             "nextState": "SENT_BACK_TO_CITIZEN",
                             "roles": [
                                 "PT_DOC_VERIFIER"
@@ -96,7 +96,7 @@
                     "actions": [
                         {
                             "tenantId": "od",
-                            "action": "SENT_BACK",
+                            "action": "SEND_BACK",
                             "nextState": "OPEN",
                             "roles": [
                                 "PT_FIELD_INSPECTOR"
@@ -123,7 +123,7 @@
                     "actions": [
                         {
                             "tenantId": "od",
-                            "action": "SENT_BACK",
+                            "action": "SEND_BACK",
                             "nextState": "DOCVERIFIED",
                             "roles": [
                                 "PT_APPROVER"

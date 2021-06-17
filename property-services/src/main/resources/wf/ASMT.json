@@ -36,24 +36,6 @@
                         }
                     ]
                 },
-				{
-                    "tenantId": "od",
-                    "sla": null,
-                    "state": "SENT_BACK_TO_CITIZEN",
-                    "applicationStatus": "INWORKFLOW",
-                    "docUploadRequired": false,
-                    "isStartState": false,
-                    "isTerminateState": false,
-                    "isStateUpdatable": true,
-                    "actions": [
-                        {
-                            "tenantId": "od",
-                            "action": "RESUBMIT",
-                            "nextState": "PENDING_DOC_VERIFY",
-                            "roles": ["CITIZEN"]
-                        }
-                    ]
-                },
                 {
                     "tenantId": "od",
                     "sla": null,
@@ -63,12 +45,6 @@
                     "isStartState": false,
                     "isTerminateState": false,
                     "actions": [
-                        {
-                            "tenantId": "od",
-                            "action": "SENT_BACK_TO_CITIZEN",
-                            "nextState": "SENT_BACK_TO_CITIZEN",
-                            "roles": ["PT_DOC_VERIFIER"]
-                        },
                         {
                             "tenantId": "od",
                             "action": "VERIFY",
@@ -88,7 +64,7 @@
                     "actions": [
                         {
                             "tenantId": "od",
-                            "action": "SENT_BACK",
+                            "action": "SEND_BACK",
                             "nextState": "PENDING_DOC_VERIFY",
                             "roles": ["PT_FIELD_INSPECTOR"]
                         },
@@ -111,7 +87,7 @@
                     "actions": [
                         {
                             "tenantId": "od",
-                            "action": "SENT_BACK",
+                            "action": "SEND_BACK",
                             "nextState": "PENDING_FIELD_INSPECTION",
                             "roles": ["PT_APPROVER"]
                         },
