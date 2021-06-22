@@ -602,7 +602,7 @@ public class CalculationService {
 
 		}
 
-		generateTaxHeadEstimate(estimates, purchasableFARFee, "BPA_SANC_FEES.PUR_FAR_FEE", Category.FEE);
+		generateTaxHeadEstimate(estimates, purchasableFARFee, BPACalculatorConstants.TAXHEAD_BPA_PURCHASABLE_FAR, Category.FEE);
 
 		// System.out.println("PurchasableFARFee:::::::::::::::::" + purchasableFARFee);
 		log.info("PurchasableFARFee:::::::::::::::::" + purchasableFARFee);
@@ -645,7 +645,7 @@ public class CalculationService {
 			}
 		}
 
-		generateTaxHeadEstimate(estimates, securityDeposit, "BPA_SANC_FEES.SECURITY_DEPOSIT", Category.FEE);
+		generateTaxHeadEstimate(estimates, securityDeposit, BPACalculatorConstants.TAXHEAD_BPA_SECURITY_DEPOSIT, Category.FEE);
 		// System.out.println("SecurityDeposit::::::::::::::" + securityDeposit);
 		log.info("SecurityDeposit::::::::::::::" + securityDeposit);
 
@@ -850,7 +850,7 @@ public class CalculationService {
 			retentionFee = TWO_THOUSAND;
 		}
 
-		generateTaxHeadEstimate(estimates, retentionFee, "BPA_SANC_FEES.RETENTION_FEE", Category.FEE);
+		generateTaxHeadEstimate(estimates, retentionFee, BPACalculatorConstants.TAXHEAD_BPA_TEMP_RETENTION_FEE, Category.FEE);
 
 		// System.out.println("RetentionFee:::::::::::" + retentionFee);
 		log.info("RetentionFee:::::::::::" + retentionFee);
@@ -879,7 +879,7 @@ public class CalculationService {
 			}
 		}
 
-		generateTaxHeadEstimate(estimates, shelterFee, "BPA_SANC_FEES.SHELTER_FEE", Category.FEE);
+		generateTaxHeadEstimate(estimates, shelterFee, BPACalculatorConstants.TAXHEAD_BPA_SHELTER_FEE, Category.FEE);
 
 		// System.out.println("ShelterFee::::::::::::::::" + shelterFee);
 		log.info("ShelterFee::::::::::::::::" + shelterFee);
@@ -983,7 +983,7 @@ public class CalculationService {
 			}
 
 		}
-		generateTaxHeadEstimate(estimates, welfareCess, "BPA_SANC_FEES.WELFARE_CESS", Category.FEE);
+		generateTaxHeadEstimate(estimates, welfareCess, BPACalculatorConstants.TAXHEAD_BPA_WORKER_WELFARE_CESS, Category.FEE);
 
 		// System.out.println("WelfareCess::::::::::::::" + welfareCess);
 		log.info("WelfareCess::::::::::::::" + welfareCess);
@@ -1034,7 +1034,7 @@ public class CalculationService {
 
 		}
 
-		generateTaxHeadEstimate(estimates, sanctionFee, "BPA_SANC_FEES.SANC_FEE", Category.FEE);
+		generateTaxHeadEstimate(estimates, sanctionFee, BPACalculatorConstants.TAXHEAD_BPA_SANCTION_FEE, Category.FEE);
 
 		// System.out.println("SanctionFee::::::::" + sanctionFee);
 		log.info("SanctionFee::::::::" + sanctionFee);
@@ -1440,7 +1440,7 @@ public class CalculationService {
 
 		}
 
-		generateTaxHeadEstimate(estimates, feeForDevelopmentOfLand, "BPA_APPL_FEES.LAND_DEV_FEE", Category.FEE);
+		generateTaxHeadEstimate(estimates, feeForDevelopmentOfLand, BPACalculatorConstants.TAXHEAD_BPA_LAND_DEVELOPMENT_FEE, Category.FEE);
 
 		// System.out.println("FeeForDevelopmentOfLand:::::::::::" +
 		// feeForDevelopmentOfLand);
@@ -1493,7 +1493,7 @@ public class CalculationService {
 			}
 
 		}
-		generateTaxHeadEstimate(estimates, feeForBuildingOperation, "BPA_APPL_FEES.BLDNG_OPRN_FEE", Category.FEE);
+		generateTaxHeadEstimate(estimates, feeForBuildingOperation, BPACalculatorConstants.TAXHEAD_BPA_BUILDING_OPERATION_FEE, Category.FEE);
 		// System.out.println("FeeForBuildingOperation:::::::::::" +
 		// feeForBuildingOperation);
 		log.info("FeeForBuildingOperation:::::::::::" + feeForBuildingOperation);

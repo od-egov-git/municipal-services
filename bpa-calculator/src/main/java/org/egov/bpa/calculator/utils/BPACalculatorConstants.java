@@ -276,5 +276,16 @@ public class BPACalculatorConstants {
 	public static final String AREA_TYPE = "AREA_TYPE";
 	public static final String AREA_TYPE_PLOT = "PLOT";
 	public static final String SECURITY_DEPOSIT = "SECURITY_DEPOSIT";
+	
+	/* Tax heads for BPA */
+	public static final String TAXHEAD_BPA_BUILDING_OPERATION_FEE = "BPA_BLDNG_OPRN_FEE";
+	public static final String TAXHEAD_BPA_LAND_DEVELOPMENT_FEE = "BPA_LAND_DEV_FEE";
+	public static final String TAXHEAD_BPA_TEMP_RETENTION_FEE = "BPA_SANC_TEMP_RETENTION_FEE";
+	public static final String TAXHEAD_BPA_SECURITY_DEPOSIT = "BPA_SANC_SECURITY_DEPOSIT";
+	public static final String TAXHEAD_BPA_WORKER_WELFARE_CESS = "BPA_SANC_WORKER_WELFARE_CESS";
+	public static final String TAXHEAD_BPA_PURCHASABLE_FAR = "BPA_SANC_PUR_FAR";
+	public static final String TAXHEAD_BPA_SHELTER_FEE = "BPA_SANC_SHELTER_FEE";
+	public static final String TAXHEAD_BPA_SANCTION_FEE = "BPA_SANC_SANC_FEE";
+	
 
 }
