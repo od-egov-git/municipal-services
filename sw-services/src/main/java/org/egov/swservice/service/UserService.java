@@ -19,6 +19,9 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import javax.validation.Valid;
 
 @Service
 public class UserService {
@@ -337,6 +340,51 @@ public class UserService {
 		}
 		//Update connection holder.
 		createUser(request);
+	}
+
+	/**
+	 * Update mobile for connection holder
+	 * @param sewerageConnectionRequest
+	 */
+	public void linkMobileWithConnectionHolder(SewerageConnectionRequest sewerageConnectionRequest) {
+		if (!CollectionUtils.isEmpty(sewerageConnectionRequest.getSewerageConnection().getConnectionHolders())) {
+			Role role = getCitizenRole();
+			sewerageConnectionRequest.getSewerageConnection().getConnectionHolders().forEach(holderInfo -> {
+				UserDetailResponse userDetailResponse = userExistsWithUid(holderInfo,
+						sewerageConnectionRequest.getRequestInfo());
+				if (!CollectionUtils.isEmpty(userDetailResponse.getUser())) {
+					holderInfo.setId(userDetailResponse.getUser().get(0).getId());
+					holderInfo.setUuid(userDetailResponse.getUser().get(0).getUuid());
+					addUserDefaultFields(sewerageConnectionRequest.getSewerageConnection().getTenantId(), role, holderInfo);
+
+					StringBuilder uri = new StringBuilder(configuration.getUserHost())
+							.append(configuration.getUserContextPath()).append(configuration.getUserUpdateEndPoint());
+					userDetailResponse = userCall(
+							new ConnectionUserRequest(sewerageConnectionRequest.getRequestInfo(), holderInfo), uri);
+					if (userDetailResponse.getUser().get(0).getUuid() == null) {
+						throw new CustomException("INVALID USER RESPONSE", "The user updated has uuid as null");
+					}
+				}
+				
+				// Assigns value of fields from user got from userDetailResponse to owner object
+				setOwnerFields(holderInfo, userDetailResponse, sewerageConnectionRequest.getRequestInfo());
+			});
+		}
+	}
+
+	/**
+	 * Get user by uuid
+	 * @param holderInfo
+	 * @param requestInfo
+	 * @return
+	 */
+	private UserDetailResponse userExistsWithUid(OwnerInfo holderInfo, @Valid RequestInfo requestInfo) {
+		UserSearchRequest userSearchRequest = getBaseUserSearchRequest(holderInfo.getTenantId(), requestInfo);
+		userSearchRequest.setUserType(holderInfo.getType());
+		userSearchRequest.setUuid(Stream.of(holderInfo.getUuid()).collect(Collectors.toSet()));
+		StringBuilder uri = new StringBuilder(configuration.getUserHost())
+				.append(configuration.getUserSearchEndpoint());
+		return userCall(userSearchRequest, uri);
 	}
 
 }

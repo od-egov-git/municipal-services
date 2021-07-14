@@ -11,6 +11,7 @@ import com.jayway.jsonpath.PathNotFoundException;
 
 import org.egov.tracer.model.CustomException;
 import org.egov.waterconnection.config.WSConfiguration;
+import org.egov.waterconnection.constants.WCConstants;
 import org.egov.waterconnection.util.WaterServicesUtil;
 import org.egov.waterconnection.web.models.Property;
 import org.egov.waterconnection.web.models.WaterConnectionRequest;
@@ -58,7 +59,16 @@ public class WorkflowIntegrator {
 	public void callWorkFlow(WaterConnectionRequest waterConnectionRequest, Property property) {
 		String wfBusinessServiceName = config.getBusinessServiceValue();
 		if(wsUtil.isModifyConnectionRequest(waterConnectionRequest)) {
-			wfBusinessServiceName = config.getModifyWSBusinessServiceName();
+			if (waterConnectionRequest.getWaterConnection().getApplicationType().equalsIgnoreCase(WCConstants.MODIFY_WATER_CONNECTION))
+				wfBusinessServiceName = config.getModifyWSBusinessServiceName();
+			if (waterConnectionRequest.getWaterConnection().getApplicationType().equalsIgnoreCase(WCConstants.DISCONNECT_WATER_CONNECTION))
+				wfBusinessServiceName = config.getDisconnectWSBusinessServiceName();
+			if (waterConnectionRequest.getWaterConnection().getApplicationType().equalsIgnoreCase(WCConstants.WATER_RECONNECTION))
+				wfBusinessServiceName = config.getWsWorkflowReconnectionName();
+			if (waterConnectionRequest.getWaterConnection().getApplicationType().equalsIgnoreCase(WCConstants.CONNECTION_OWNERSHIP_CHANGE))
+				wfBusinessServiceName = config.getWsWorkflowownershipChangeName();
+			if (waterConnectionRequest.getWaterConnection().getApplicationType().equalsIgnoreCase(WCConstants.CLOSE_WATER_CONNECTION))
+				wfBusinessServiceName = config.getCloseWSBusinessServiceName();
 		}
 		ProcessInstance processInstance = ProcessInstance.builder()
 				.businessId(waterConnectionRequest.getWaterConnection().getApplicationNo())

@@ -12,6 +12,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Builder.Default;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -41,6 +42,14 @@ public class CalculationReq  {
 		 * 
 		 */
         private Boolean isconnectionCalculation;
+		
+		@JsonProperty("isReconnectionCalculation")
+		@Default
+		private Boolean isReconnectionCalculation = Boolean.FALSE;
+		
+		@JsonProperty("isOwnershipChangeCalculation")
+		@Default
+		private Boolean isOwnershipChangeCalculation = Boolean.FALSE;
 
         @Valid
         @NotNull

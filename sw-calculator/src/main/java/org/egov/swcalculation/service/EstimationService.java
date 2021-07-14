@@ -2,6 +2,7 @@ package org.egov.swcalculation.service;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.ArrayList;
@@ -22,7 +23,6 @@ import org.egov.swcalculation.util.SWCalculationUtil;
 import org.egov.swcalculation.util.SewerageCessUtil;
 import org.egov.swcalculation.web.models.BillingSlab;
 import org.egov.swcalculation.web.models.CalculationCriteria;
-import org.egov.swcalculation.web.models.Property;
 import org.egov.swcalculation.web.models.RequestInfoWrapper;
 import org.egov.swcalculation.web.models.RoadCuttingInfo;
 import org.egov.swcalculation.web.models.SearchCriteria;
@@ -55,6 +55,9 @@ public class EstimationService {
 
 	@Autowired
 	private SWCalculationUtil sWCalculationUtil;
+	
+	private static BigDecimal OWNERSHIP_CHANGE_FEE = BigDecimal.valueOf(60);
+	private static BigDecimal RECONNECTION_CHANGE_CHARGE = BigDecimal.valueOf(300);
 
 	/**
 	 * Generates a List of Tax head estimates with tax head code, tax head category
@@ -644,5 +647,67 @@ public class EstimationService {
 		calendar.set(Calendar.MINUTE, 59);
 		calendar.set(Calendar.SECOND, 59);
 		calendar.set(Calendar.MILLISECOND, 999);
+	}
+
+	public Map<String, List> getOwnershipChangeFeeEstimation(CalculationCriteria criteria, RequestInfo requestInfo) {
+		if (StringUtils.isEmpty(criteria.getSewerageConnection()) && !StringUtils.isEmpty(criteria.getApplicationNo())) {
+			SearchCriteria searchCriteria = new SearchCriteria();
+			searchCriteria.setApplicationNumber(criteria.getApplicationNo());
+			searchCriteria.setTenantId(criteria.getTenantId());
+			SewerageConnection sewerageConnection = calculatorUtil.getSewerageConnectionOnApplicationNO(requestInfo, searchCriteria, requestInfo.getUserInfo().getTenantId());
+			criteria.setSewerageConnection(sewerageConnection);
+		}
+		if (StringUtils.isEmpty(criteria.getSewerageConnection())) {
+			throw new CustomException("SEWERAGE_CONNECTION_NOT_FOUND",
+					"Sewerage Connection are not present for " + criteria.getApplicationNo() + " Application no");
+		}
+		List<TaxHeadEstimate> taxHeadEstimates = getTaxHeadForOwhershipChangeFeeEstimationV2(criteria, requestInfo);
+		Map<String, List> estimatesAndBillingSlabs = new HashMap<>();
+		estimatesAndBillingSlabs.put("estimates", taxHeadEstimates);
+		return estimatesAndBillingSlabs;
+	}
+
+	private List<TaxHeadEstimate> getTaxHeadForOwhershipChangeFeeEstimationV2(CalculationCriteria criteria,
+			RequestInfo requestInfo) {
+		BigDecimal reconnectionCharge = OWNERSHIP_CHANGE_FEE;
+		
+		List<TaxHeadEstimate> estimates = new ArrayList<>();
+		if(reconnectionCharge.compareTo(BigDecimal.ZERO) != 0) {
+			estimates.add(TaxHeadEstimate.builder().taxHeadCode(SWCalculationConstant.SW_OWNERSHIP_CHANGE_FEE)
+					.estimateAmount(reconnectionCharge.setScale(2, RoundingMode.UP)).build());
+		}
+		
+		return estimates;
+	}
+
+	public Map<String, List> getReconnectionFeeEstimation(CalculationCriteria criteria, RequestInfo requestInfo) {
+		if (StringUtils.isEmpty(criteria.getSewerageConnection()) && !StringUtils.isEmpty(criteria.getApplicationNo())) {
+			SearchCriteria searchCriteria = new SearchCriteria();
+			searchCriteria.setApplicationNumber(criteria.getApplicationNo());
+			searchCriteria.setTenantId(criteria.getTenantId());
+			SewerageConnection sewerageConnection = calculatorUtil.getSewerageConnectionOnApplicationNO(requestInfo, searchCriteria, requestInfo.getUserInfo().getTenantId());
+			criteria.setSewerageConnection(sewerageConnection);
+		}
+		if (StringUtils.isEmpty(criteria.getSewerageConnection())) {
+			throw new CustomException("SEWERAGE_CONNECTION_NOT_FOUND",
+					"Sewerage Connection are not present for " + criteria.getApplicationNo() + " Application no");
+		}
+		List<TaxHeadEstimate> taxHeadEstimates = getTaxHeadForReconnectionFeeEstimationV2(criteria, requestInfo);
+		Map<String, List> estimatesAndBillingSlabs = new HashMap<>();
+		estimatesAndBillingSlabs.put("estimates", taxHeadEstimates);
+		return estimatesAndBillingSlabs;
+	}
+
+	private List<TaxHeadEstimate> getTaxHeadForReconnectionFeeEstimationV2(CalculationCriteria criteria,
+			RequestInfo requestInfo) {
+		BigDecimal reconnectionCharge = RECONNECTION_CHANGE_CHARGE;
+		
+		List<TaxHeadEstimate> estimates = new ArrayList<>();
+		if(reconnectionCharge.compareTo(BigDecimal.ZERO) != 0) {
+			estimates.add(TaxHeadEstimate.builder().taxHeadCode(SWCalculationConstant.SW_RECONNECTION_CHARGE)
+					.estimateAmount(reconnectionCharge.setScale(2, RoundingMode.UP)).build());
+		}
+		
+		return estimates;
 	}
 }

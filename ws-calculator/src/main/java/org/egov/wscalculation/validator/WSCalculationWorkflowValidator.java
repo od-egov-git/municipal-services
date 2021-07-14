@@ -65,7 +65,7 @@ public class WSCalculationWorkflowValidator {
 		if (!isApplicationApproved)
 			errorMap.put("WATER_APPLICATION_ERROR",
 					"Demand cannot be generated as water connection application with application number "
-							+ waterApplicationNumber + " is in workflow and not approved yet");
+							+ waterApplicationNumber + " is either not approved yet or disconnected or closed");
 	}
 
 	// public void propertyValidation(RequestInfo requestInfo, String tenantId, Property property,
@@ -91,6 +91,9 @@ public class WSCalculationWorkflowValidator {
 		if (processInstancesList.isEmpty() && 
 				waterApplicationStatus.equalsIgnoreCase(WSCalculationConstant.WATER_CONNECTION_APP_STATUS_ACTIVATED_STRING)) {
 					isApplicationApproved = true;
+		} else if (waterApplicationStatus.equalsIgnoreCase(WSCalculationConstant.WATER_CONNECTION_APP_STATUS_DISCONNECTED_STRING)
+				|| waterApplicationStatus.equalsIgnoreCase(WSCalculationConstant.WATER_CONNECTION_APP_STATUS_CLOSED_STRING)) {
+			isApplicationApproved = false;
 		} else {
 			for (ProcessInstance processInstances : processInstancesList) {
 				if (processInstances.getState().getIsTerminateState()) {

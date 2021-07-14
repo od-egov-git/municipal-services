@@ -602,13 +602,15 @@ public class CalculationService {
 		JSONArray totalProjectValueForEIDPOcArray = ocContext.read(BPACalculatorConstants.PROJECT_VALUE_FOR_EIDP_PATH);
 		if (!CollectionUtils.isEmpty(totalProjectValueForEIDPOcArray)) {
 			String totalProjectValueForEIDPOc = totalProjectValueForEIDPOcArray.get(0).toString();
-			paramMap.put(BPACalculatorConstants.PROJECT_VALUE_FOR_EIDP_OC, totalProjectValueForEIDPOc);
+			Double projectValueForEIDPOc = Double.parseDouble(totalProjectValueForEIDPOc);
+			paramMap.put(BPACalculatorConstants.PROJECT_VALUE_FOR_EIDP_OC, projectValueForEIDPOc);
 		}
 		
 		JSONArray totalProjectValueForEIDPArray = edcrContext.read(BPACalculatorConstants.PROJECT_VALUE_FOR_EIDP_PATH);
 		if (!CollectionUtils.isEmpty(totalProjectValueForEIDPArray)) {
 			String totalProjectValueForEIDP = totalProjectValueForEIDPArray.get(0).toString();
-			paramMap.put(BPACalculatorConstants.PROJECT_VALUE_FOR_EIDP, totalProjectValueForEIDP);
+			Double projectValueForEIDP = Double.parseDouble(totalProjectValueForEIDP);
+			paramMap.put(BPACalculatorConstants.PROJECT_VALUE_FOR_EIDP, projectValueForEIDP);
 		}
 
 		JSONArray isProjectUndertakingByGovtArray = ocContext.read(BPACalculatorConstants.PROJECT_UNDERTAKING_BY_GOVT_PATH);
@@ -771,7 +773,8 @@ public class CalculationService {
 		JSONArray totalProjectValueForEIDPArray = context.read(BPACalculatorConstants.PROJECT_VALUE_FOR_EIDP_PATH);
 		if (!CollectionUtils.isEmpty(totalProjectValueForEIDPArray)) {
 			String totalProjectValueForEIDP = totalProjectValueForEIDPArray.get(0).toString();
-			paramMap.put(BPACalculatorConstants.PROJECT_VALUE_FOR_EIDP, totalProjectValueForEIDP);
+			Double projectValueForEIDP = Double.parseDouble(totalProjectValueForEIDP);
+			paramMap.put(BPACalculatorConstants.PROJECT_VALUE_FOR_EIDP, projectValueForEIDP);
 		}
 
 		paramMap.put(BPACalculatorConstants.APPLICATION_TYPE, applicationType);
@@ -2599,21 +2602,23 @@ public class CalculationService {
 		if (null != paramMap.get(BPACalculatorConstants.PLOT_AREA)) {
 			plotArea = (Double) paramMap.get(BPACalculatorConstants.PLOT_AREA);
 		}
-		if ((StringUtils.hasText(applicationType)
-				&& applicationType.equalsIgnoreCase(BPACalculatorConstants.BUILDING_PLAN_SCRUTINY))
-				&& (StringUtils.hasText(serviceType)
-						&& serviceType.equalsIgnoreCase(BPACalculatorConstants.NEW_CONSTRUCTION))) {
-			if (null != plotArea) {
-				paramMap.put(BPACalculatorConstants.AREA_TYPE, BPACalculatorConstants.AREA_TYPE_PLOT);
-				// feeForDevelopmentOfLand = calculateConstantFee(paramMap, 5);
-				feeForDevelopmentOfLand = calculateConstantFeeNew(plotArea, 5);
-				paramMap.put(BPACalculatorConstants.AREA_TYPE, null);
+		
+		if(!BPACalculatorConstants.RISK_TYPE_LOW.equalsIgnoreCase(riskType)) {
+			if ((StringUtils.hasText(applicationType)
+					&& applicationType.equalsIgnoreCase(BPACalculatorConstants.BUILDING_PLAN_SCRUTINY))
+					&& (StringUtils.hasText(serviceType)
+							&& serviceType.equalsIgnoreCase(BPACalculatorConstants.NEW_CONSTRUCTION))) {
+				if (null != plotArea) {
+					paramMap.put(BPACalculatorConstants.AREA_TYPE, BPACalculatorConstants.AREA_TYPE_PLOT);
+					// feeForDevelopmentOfLand = calculateConstantFee(paramMap, 5);
+					feeForDevelopmentOfLand = calculateConstantFeeNew(plotArea, 5);
+					paramMap.put(BPACalculatorConstants.AREA_TYPE, null);
+				}
+	
 			}
-
+	
+			generateTaxHeadEstimate(estimates, feeForDevelopmentOfLand, BPACalculatorConstants.TAXHEAD_BPA_LAND_DEVELOPMENT_FEE, Category.FEE);
 		}
-
-		generateTaxHeadEstimate(estimates, feeForDevelopmentOfLand, BPACalculatorConstants.TAXHEAD_BPA_LAND_DEVELOPMENT_FEE, Category.FEE);
-
 		// System.out.println("FeeForDevelopmentOfLand:::::::::::" +
 		// feeForDevelopmentOfLand);
 		log.info("FeeForDevelopmentOfLand:::::::::::" + feeForDevelopmentOfLand);

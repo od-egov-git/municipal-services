@@ -184,7 +184,7 @@ public class WSConfiguration {
 
 	@Value("${egov.waterservice.savefilestoreIds.topic}")
 	private String saveFileStoreIdsTopic;
- 
+
 	@Value("${egov.user.create.path}")
 	private String userCreateEndPoint;
 
@@ -194,6 +194,19 @@ public class WSConfiguration {
 	@Value("${modify.ws.workflow.name}")
 	private String modifyWSBusinessServiceName;
 
+	@Value("${disconnect.ws.workflow.name}")
+	private String disconnectWSBusinessServiceName;
+
+	@Value("${close.ws.workflow.name}")
+	private String closeWSBusinessServiceName;
+
 	@Value("${egov.collection.host}")
 	private String collectionHost;
+	
+	@Value("${reconnection.ws.workflow.name}")
+	private String wsWorkflowReconnectionName;
+	
+	@Value("${ownershipChange.ws.workflow.name}")
+	private String wsWorkflowownershipChangeName;
+	
 }

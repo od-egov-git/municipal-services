@@ -38,6 +38,8 @@ public class WCConstants {
 
 	public static final String METERED_CONNECTION = "Metered";
 
+	public static final String LINK_MOBILE_NUMBER = "LINK_MOBILE_NUMBER";
+
 	// WS actions
 
 	public static final String ACTION_INITIATE = "INITIATE";
@@ -221,13 +223,32 @@ public class WCConstants {
 
 	public static final String APPROVE_CONNECTION = "APPROVE_CONNECTION";
 
+	public static final String ACTION_DISCONNECT_CONNECTION = "DISCONNECT_CONNECTION";
+	
+	public static final String ACTION_CLOSE_CONNECTION = "CLOSE_CONNECTION";
+	
 	// Used to differentiate the type of request which is processing
 	public static final int CREATE_APPLICATION = 0;
 	public static final int UPDATE_APPLICATION = 1;
 	public static final int MODIFY_CONNECTION =  2;
+	public static final int DISCONNECT_CONNECTION =  3;
+	public static final int CLOSE_CONNECTION =  4;
+	public static final int RECONNECTION =  5;
+	public static final int OWNERSHIP_CHANGE_CONNECTION =  6;
 	
 	public static final String NEW_WATER_CONNECTION = "NEW_WATER_CONNECTION";
+
 	public static final String MODIFY_WATER_CONNECTION = "MODIFY_WATER_CONNECTION";
+
+	public static final String DISCONNECT_WATER_CONNECTION = "DISCONNECT_WATER_CONNECTION";
+
+	public static final String CLOSE_WATER_CONNECTION = "CLOSE_WATER_CONNECTION";
+
+	public static final String RECONNECT_WATER_CONNECTION = "RECONNECT_WATER_CONNECTION";
+	
+	public static final String WATER_RECONNECTION = "WATER_RECONNECTION";
+	
+	public static final String CONNECTION_OWNERSHIP_CHANGE = "CONNECTION_OWNERSHIP_CHANGE";
 	
 	public static final String WATER_SERVICE_BUSINESS_ID = "WS";
 
@@ -239,9 +260,15 @@ public class WCConstants {
 
 	public static final String MODIFIED_FINAL_STATE = "APPROVED";
 
+	public static final String MODIFIED_FINAL_STATE_DISCONNECTED = "CONNECTION_DISCONNECTED";
+	
+	public static final String MODIFIED_FINAL_STATE_CONNECTION_CLOSED = "CONNECTION_CLOSED";
+
 	public static final List<String> FINAL_CONNECTION_STATES = Collections
-			.unmodifiableList(Arrays.asList(MODIFIED_FINAL_STATE, STATUS_APPROVED));
+			.unmodifiableList(Arrays.asList(MODIFIED_FINAL_STATE, STATUS_APPROVED,MODIFIED_FINAL_STATE_DISCONNECTED, MODIFIED_FINAL_STATE_CONNECTION_CLOSED));
 	
 	public static final String SEARCH_TYPE_CONNECTION = "CONNECTION";
+	
+	public static final String ROLE_EMPLOYEE = "EMPLOYEE";
 
 }

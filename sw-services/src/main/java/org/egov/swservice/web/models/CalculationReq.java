@@ -43,6 +43,12 @@ public class CalculationReq   {
     	@JsonProperty("isconnectionCalculation")
 		@NotNull
 		 private Boolean isconnectionCalculation;
+    	
+    	@JsonProperty("isReconnectionCalculation")
+		 private Boolean isReconnectionCalculation;
+    	
+    	@JsonProperty("isOwnershipChangeCalculation")
+		 private Boolean isOwnershipChangeCalculation;
 
 
         public CalculationReq addCalulationCriteriaItem(CalculationCriteria calulationCriteriaItem) {

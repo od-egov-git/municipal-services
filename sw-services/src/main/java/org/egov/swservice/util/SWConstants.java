@@ -191,6 +191,10 @@ public class SWConstants {
 	public static final String PDF_SANCTION_KEY = "ws-sanctionletter";
 	
 	public static final long DAYS_CONST= 86400000L;
+
+	public static final String ACTION_DISCONNECT_CONNECTION = "DISCONNECT_CONNECTION";
+
+	public static final String ACTION_CLOSE_CONNECTION = "CLOSE_CONNECTION";
 	
 	// Used to differentiate the type of request which is processing
 	public static final int CREATE_APPLICATION = 0;
@@ -199,10 +203,27 @@ public class SWConstants {
 
 	public static final int MODIFY_CONNECTION = 2;
 
+	public static final int DISCONNECT_CONNECTION =  3;
+
+	public static final int CLOSE_CONNECTION =  4;
+	
+	public static final int RECONNECTION =  5;
+	
+	public static final int OWNERSHIP_CHANGE_CONNECTION =  6;
+
 	public static final String APPROVE_CONNECTION = "APPROVE_CONNECTION";
 
 	public static final String NEW_SEWERAGE_CONNECTION ="NEW_SEWERAGE_CONNECTION";
+
 	public static final String MODIFY_SEWERAGE_CONNECTION = "MODIFY_SEWERAGE_CONNECTION";
+
+	public static final String DISCONNECT_SEWERAGE_CONNECTION = "DISCONNECT_SEWERAGE_CONNECTION";
+
+	public static final String CLOSE_SEWERAGE_CONNECTION = "CLOSE_SEWERAGE_CONNECTION";
+
+	public static final String SEWERAGE_RECONNECTION = "SEWERAGE_RECONNECTION";
+	
+	public static final String CONNECTION_OWNERSHIP_CHANGE = "CONNECTION_OWNERSHIP_CHANGE";
 	
 	public static final String SEWERAGE_SERVICE_BUSINESS_ID = "SW";
 
@@ -214,9 +235,17 @@ public class SWConstants {
 
 	public static final String MODIFIED_FINAL_STATE = "APPROVED";
 
+	public static final String MODIFIED_FINAL_STATE_DISCONNECTED = "CONNECTION_DISCONNECTED";
+
+	public static final String MODIFIED_FINAL_STATE_CONNECTION_CLOSED = "CONNECTION_CLOSED";
+
 	public static final List<String> FINAL_CONNECTION_STATES = Collections
-			.unmodifiableList(Arrays.asList(MODIFIED_FINAL_STATE, STATUS_APPROVED));
+			.unmodifiableList(Arrays.asList(MODIFIED_FINAL_STATE, STATUS_APPROVED,MODIFIED_FINAL_STATE_DISCONNECTED,MODIFIED_FINAL_STATE_CONNECTION_CLOSED));
 
 	public static final String SEARCH_TYPE_CONNECTION = "CONNECTION";
+
+	public static final String LINK_MOBILE_NUMBER = "LINK_MOBILE_NUMBER";
+
+	public static final Object ROLE_EMPLOYEE = "EMPLOYEE";
 
 }

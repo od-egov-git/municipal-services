@@ -7,6 +7,8 @@ import java.util.Map;
 
 import org.egov.swservice.service.PropertyValidator;
 import org.egov.swservice.service.SewerageFieldValidator;
+import org.egov.swservice.util.SWConstants;
+import org.egov.swservice.web.models.Connection.StatusEnum;
 import org.egov.swservice.web.models.SewerageConnection;
 import org.egov.swservice.web.models.SewerageConnectionRequest;
 import org.egov.swservice.web.models.ValidatorResult;
@@ -107,5 +109,38 @@ public class SewerageConnectionValidator {
 	 */
 	private void setFieldsFromSearch(SewerageConnectionRequest request, SewerageConnection searchResult) {
 		request.getSewerageConnection().setConnectionNo(searchResult.getConnectionNo());
+	}
+
+
+	public void validateConnectionStatus(List<SewerageConnection> sewerageConnectionList,
+			SewerageConnectionRequest sewerageConnectionRequest, int reqType) {
+		Map<String, String> errorMap = new HashMap<>();
+		SewerageConnection sewerageConnection = sewerageConnectionList.stream().filter(wc -> wc.getOldApplication().booleanValue()==false).findFirst().orElse(null);
+		if(sewerageConnection != null) {
+			if(reqType == SWConstants.RECONNECTION && !(sewerageConnection.getStatus()==StatusEnum.ACTIVE 
+					&& SWConstants.MODIFIED_FINAL_STATE_DISCONNECTED.equals(sewerageConnection.getApplicationStatus()))) {
+				errorMap.put("INVALID APPLICATION", "Reconnection can only be applied on a disconnected connection.");
+			}
+			if(reqType == SWConstants.OWNERSHIP_CHANGE_CONNECTION && !(sewerageConnection.getStatus()==StatusEnum.ACTIVE 
+					&& SWConstants.STATUS_APPROVED.equals(sewerageConnection.getApplicationStatus()))) {
+				errorMap.put("INVALID APPLICATION", "The ownership can be changed only for an active connection.");
+			}
+			if(reqType == SWConstants.CLOSE_CONNECTION && !(sewerageConnection.getStatus()==StatusEnum.ACTIVE 
+					&& (SWConstants.MODIFIED_FINAL_STATE_DISCONNECTED.equals(sewerageConnection.getApplicationStatus()))
+					|| SWConstants.STATUS_APPROVED.equals(sewerageConnection.getApplicationStatus()))) {
+				errorMap.put("INVALID APPLICATION", "The connection is either in workflow or already closed");
+			} 
+			if(reqType == SWConstants.DISCONNECT_CONNECTION && !(sewerageConnection.getStatus()==StatusEnum.ACTIVE 
+					&& (SWConstants.STATUS_APPROVED.equals(sewerageConnection.getApplicationStatus())))) {
+				errorMap.put("INVALID APPLICATION", "The connection is either in workflow or already closed");
+			}
+			if(reqType == SWConstants.MODIFY_CONNECTION && (SWConstants.MODIFIED_FINAL_STATE_DISCONNECTED.equals(sewerageConnection.getApplicationStatus())
+						|| SWConstants.MODIFIED_FINAL_STATE_CONNECTION_CLOSED.equals(sewerageConnection.getApplicationStatus()))) {
+				errorMap.put("INVALID APPLICATION", "The connection is either disconnected or already closed");
+			}
+		}
+		
+		if (!CollectionUtils.isEmpty(errorMap))
+			throw new CustomException(errorMap);
 	}
 }

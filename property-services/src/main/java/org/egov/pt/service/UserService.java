@@ -13,6 +13,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.egov.common.contract.request.RequestInfo;
 import org.egov.common.contract.request.Role;
@@ -134,7 +135,8 @@ public class UserService {
     private UserDetailResponse searchUserByUuid(OwnerInfo owner, RequestInfo requestInfo) {
     	UserSearchRequest userSearchRequest = getBaseUserSearchRequest(owner.getTenantId(), requestInfo);
 		userSearchRequest.setUserType(owner.getType());
-		userSearchRequest.setName(owner.getName());
+		Set<String> uuids = Stream.of(owner.getUuid()).collect(Collectors.toSet());
+		userSearchRequest.setUuid(uuids);
 		
         StringBuilder uri = new StringBuilder(userHost).append(userSearchEndpoint);
         return userCall(userSearchRequest,uri);

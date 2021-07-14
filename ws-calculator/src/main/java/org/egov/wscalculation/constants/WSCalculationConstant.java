@@ -183,6 +183,10 @@ public class WSCalculationConstant {
 	public static final String WATER_CONNECTION_BILL_GENERATION_APP_MESSAGE = "WATER_CONNECTION_BILL_GENERATION_APP_MESSAGE";
 
 	public static final String WATER_CONNECTION_APP_STATUS_ACTIVATED_STRING = "CONNECTION_ACTIVATED";
+
+	public static final String WATER_CONNECTION_APP_STATUS_DISCONNECTED_STRING = "CONNECTION_DISCONNECTED";
+
+	public static final String WATER_CONNECTION_APP_STATUS_CLOSED_STRING = "CONNECTION_CLOSED";
 	
 	public static final String  USREVENTS_EVENT_TYPE = "SYSTEMGENERATED";
 	
@@ -224,6 +228,10 @@ public class WSCalculationConstant {
 	public static final String WS_ADHOC_PENALTY = "WS_ADHOC_PENALTY";
 
 	public static final String WS_ADHOC_REBATE = "WS_ADHOC_REBATE";
+	
+	public static final String WS_RECONNECTION_CHARGE = "WS_RECONNECTION_CHARGE";
+	
+	public static final String WS_OWNERSHIP_CHANGE_FEE = "WS_OWNERSHIP_CHANGE_FEE";
 	
 	public static final String FORM_FEE_CONST = "formFee";
 

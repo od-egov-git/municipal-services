@@ -17,6 +17,7 @@ import org.egov.swservice.validator.ActionValidator;
 import org.egov.swservice.validator.MDMSValidator;
 import org.egov.swservice.validator.SewerageConnectionValidator;
 import org.egov.swservice.validator.ValidateProperty;
+import org.egov.swservice.web.models.Connection.StatusEnum;
 import org.egov.swservice.web.models.Property;
 import org.egov.swservice.web.models.SearchCriteria;
 import org.egov.swservice.web.models.SewerageConnection;
@@ -86,12 +87,14 @@ public class SewerageServiceImpl implements SewerageService {
 	public List<SewerageConnection> createSewerageConnection(SewerageConnectionRequest sewerageConnectionRequest) {
 		int reqType = SWConstants.CREATE_APPLICATION;
 		if (sewerageServicesUtil.isModifyConnectionRequest(sewerageConnectionRequest)) {
+			reqType = getModifyConnectionRequestType(sewerageConnectionRequest);
+			
 			List<SewerageConnection> sewerageConnectionList = getAllSewerageApplications(sewerageConnectionRequest);
 			if (!CollectionUtils.isEmpty(sewerageConnectionList)) {
 				workflowService.validateInProgressWF(sewerageConnectionList, sewerageConnectionRequest.getRequestInfo(),
 						sewerageConnectionRequest.getSewerageConnection().getTenantId());
+				sewerageConnectionValidator.validateConnectionStatus(sewerageConnectionList, sewerageConnectionRequest, reqType);
 			}
-			reqType = SWConstants.MODIFY_CONNECTION;
 		}
 		sewerageConnectionValidator.validateSewerageConnection(sewerageConnectionRequest, reqType);
 		// Property property =
@@ -107,6 +110,32 @@ public class SewerageServiceImpl implements SewerageService {
 		if (config.getIsExternalWorkFlowEnabled())
 			wfIntegrator.callWorkFlow(sewerageConnectionRequest, property);
 		return Arrays.asList(sewerageConnectionRequest.getSewerageConnection());
+	}
+
+	private int getModifyConnectionRequestType(SewerageConnectionRequest sewerageConnectionRequest) {
+		int reqType = SWConstants.MODIFY_CONNECTION;
+		
+		if(null != sewerageConnectionRequest.getSewerageConnection().getApplicationType()) {
+			switch (sewerageConnectionRequest.getSewerageConnection().getApplicationType()) {
+			case SWConstants.DISCONNECT_SEWERAGE_CONNECTION:
+				reqType = SWConstants.DISCONNECT_CONNECTION;
+				break;
+			case SWConstants.SEWERAGE_RECONNECTION:
+				reqType = SWConstants.RECONNECTION;
+				break;
+			case SWConstants.CONNECTION_OWNERSHIP_CHANGE:
+				reqType = SWConstants.OWNERSHIP_CHANGE_CONNECTION;
+				break;
+			case SWConstants.CLOSE_SEWERAGE_CONNECTION:
+				reqType = SWConstants.CLOSE_CONNECTION;
+				break;
+			default:
+				reqType = SWConstants.MODIFY_CONNECTION;
+				break;
+			}
+		}
+		
+		return reqType;
 	}
 
 	/**
@@ -152,6 +181,9 @@ public class SewerageServiceImpl implements SewerageService {
 	 */
 	@Override
 	public List<SewerageConnection> updateSewerageConnection(SewerageConnectionRequest sewerageConnectionRequest) {
+		if (sewerageConnectionRequest.getSewerageConnection().getApplicationType().equalsIgnoreCase(SWConstants.LINK_MOBILE_NUMBER)) {
+			return linkMobileWithSewerageConnection(sewerageConnectionRequest);
+		}
 		if (sewerageServicesUtil.isModifyConnectionRequest(sewerageConnectionRequest)) {
 			return modifySewerageConnection(sewerageConnectionRequest);
 		}
@@ -185,6 +217,17 @@ public class SewerageServiceImpl implements SewerageService {
 		enrichmentService.postStatusEnrichment(sewerageConnectionRequest);
 		sewerageDao.updateSewerageConnection(sewerageConnectionRequest,
 				sewerageServicesUtil.getStatusForUpdate(businessService, previousApplicationStatus));
+		return Arrays.asList(sewerageConnectionRequest.getSewerageConnection());
+	}
+
+	/**
+	 * Link mobile with connection
+	 * @param sewerageConnectionRequest
+	 * @return
+	 */
+	private List<SewerageConnection> linkMobileWithSewerageConnection(
+			SewerageConnectionRequest sewerageConnectionRequest) {
+		userService.linkMobileWithConnectionHolder(sewerageConnectionRequest);
 		return Arrays.asList(sewerageConnectionRequest.getSewerageConnection());
 	}
 
@@ -233,20 +276,18 @@ public class SewerageServiceImpl implements SewerageService {
 		// validateProperty.validatePropertyFields(property,sewerageConnectionRequest.getRequestInfo());
 		Property property = Property.builder().tenantId(sewerageConnectionRequest.getSewerageConnection().getTenantId())
 				.build();
-		String previousApplicationStatus = workflowService.getApplicationStatus(
-				sewerageConnectionRequest.getRequestInfo(),
-				sewerageConnectionRequest.getSewerageConnection().getApplicationNo(),
-				sewerageConnectionRequest.getSewerageConnection().getTenantId(),
-				config.getModifySWBusinessServiceName());
-		BusinessService businessService = workflowService.getBusinessService(config.getModifySWBusinessServiceName(),
-				sewerageConnectionRequest.getSewerageConnection().getTenantId(),
-				sewerageConnectionRequest.getRequestInfo());
+		String previousApplicationStatus = getApplicationStatus(sewerageConnectionRequest);
+		BusinessService businessService = getBusinessService(sewerageConnectionRequest);
 		SewerageConnection searchResult = getConnectionForUpdateRequest(
 				sewerageConnectionRequest.getSewerageConnection().getId(), sewerageConnectionRequest.getRequestInfo());
+	
 		enrichmentService.enrichUpdateSewerageConnection(sewerageConnectionRequest);
 		actionValidator.validateUpdateRequest(sewerageConnectionRequest, businessService, previousApplicationStatus);
 		sewerageConnectionValidator.validateUpdate(sewerageConnectionRequest, searchResult);
 		userService.updateUser(sewerageConnectionRequest, searchResult);
+		calculateFeeAndGenerateDemand(sewerageConnectionRequest, property);
+		// setting status as Inactive for closed connection
+		inactiveConnection(sewerageConnectionRequest);
 		sewerageDaoImpl.pushForEditNotification(sewerageConnectionRequest);
 		// Call workflow
 		wfIntegrator.callWorkFlow(sewerageConnectionRequest, property);
@@ -257,9 +298,67 @@ public class SewerageServiceImpl implements SewerageService {
 		return Arrays.asList(sewerageConnectionRequest.getSewerageConnection());
 	}
 
-	public void markOldApplication(SewerageConnectionRequest sewerageConnectionRequest) {
+	private String getApplicationStatus(SewerageConnectionRequest sewerageConnectionRequest) {
+		String businessServiceName;
+		if(null != sewerageConnectionRequest.getSewerageConnection().getApplicationType() 
+				&& sewerageConnectionRequest.getSewerageConnection().getApplicationType().equalsIgnoreCase(SWConstants.DISCONNECT_SEWERAGE_CONNECTION)) {
+			businessServiceName = config.getDisconnectSWBusinessServiceName();
+		} else if(null != sewerageConnectionRequest.getSewerageConnection().getApplicationType() 
+				&& sewerageConnectionRequest.getSewerageConnection().getApplicationType().equalsIgnoreCase(SWConstants.SEWERAGE_RECONNECTION)) {
+			businessServiceName = config.getWsWorkflowReconnectionName();
+		} else if(null != sewerageConnectionRequest.getSewerageConnection().getApplicationType() 
+				&& sewerageConnectionRequest.getSewerageConnection().getApplicationType().equalsIgnoreCase(SWConstants.CONNECTION_OWNERSHIP_CHANGE)) {
+			businessServiceName = config.getWsWorkflowownershipChangeName();
+		} else if (null != sewerageConnectionRequest.getSewerageConnection().getApplicationType() 
+				&& sewerageConnectionRequest.getSewerageConnection().getApplicationType().equalsIgnoreCase(SWConstants.CLOSE_SEWERAGE_CONNECTION)) {
+			businessServiceName = config.getCloseSWBusinessServiceName();
+		} else {
+			businessServiceName = config.getModifySWBusinessServiceName();
+		}
+
+		return workflowService.getApplicationStatus(sewerageConnectionRequest.getRequestInfo(),
+				sewerageConnectionRequest.getSewerageConnection().getApplicationNo(),
+				sewerageConnectionRequest.getSewerageConnection().getTenantId(), businessServiceName);
+	}
+
+	private BusinessService getBusinessService(SewerageConnectionRequest sewerageConnectionRequest) {
+		String businessServiceName;
+		if(null != sewerageConnectionRequest.getSewerageConnection().getApplicationType() 
+				&& sewerageConnectionRequest.getSewerageConnection().getApplicationType().equalsIgnoreCase(SWConstants.DISCONNECT_SEWERAGE_CONNECTION)) {
+			businessServiceName = config.getDisconnectSWBusinessServiceName();
+		} else if(null != sewerageConnectionRequest.getSewerageConnection().getApplicationType() 
+				&& sewerageConnectionRequest.getSewerageConnection().getApplicationType().equalsIgnoreCase(SWConstants.SEWERAGE_RECONNECTION)) {
+			businessServiceName = config.getWsWorkflowReconnectionName();
+		} else if(null != sewerageConnectionRequest.getSewerageConnection().getApplicationType() 
+				&& sewerageConnectionRequest.getSewerageConnection().getApplicationType().equalsIgnoreCase(SWConstants.CONNECTION_OWNERSHIP_CHANGE)) {
+			businessServiceName = config.getWsWorkflowownershipChangeName();
+		} else if(null != sewerageConnectionRequest.getSewerageConnection().getApplicationType() 
+				&& sewerageConnectionRequest.getSewerageConnection().getApplicationType().equalsIgnoreCase(SWConstants.CLOSE_SEWERAGE_CONNECTION)) {
+			businessServiceName = config.getCloseSWBusinessServiceName();
+		} else {
+			businessServiceName = config.getModifySWBusinessServiceName();
+		}
+		
+		return workflowService.getBusinessService(businessServiceName,
+				sewerageConnectionRequest.getSewerageConnection().getTenantId(), sewerageConnectionRequest.getRequestInfo());
+	}
+
+	private void calculateFeeAndGenerateDemand(SewerageConnectionRequest sewerageConnectionRequest, Property property) {
+		if(SWConstants.SEWERAGE_RECONNECTION.equals(sewerageConnectionRequest.getSewerageConnection().getApplicationType())
+				|| SWConstants.CONNECTION_OWNERSHIP_CHANGE.equals(sewerageConnectionRequest.getSewerageConnection().getApplicationType())) {
+			calculationService.calculateFeeAndGenerateDemand(sewerageConnectionRequest, property);
+		}
+	}
+
+	private void inactiveConnection(SewerageConnectionRequest sewerageConnectionRequest) {
 		if (sewerageConnectionRequest.getSewerageConnection().getProcessInstance().getAction()
-				.equalsIgnoreCase(APPROVE_CONNECTION)) {
+				.equalsIgnoreCase(SWConstants.ACTION_CLOSE_CONNECTION)) {
+					sewerageConnectionRequest.getSewerageConnection().setStatus(StatusEnum.INACTIVE);
+		}
+	}
+
+	public void markOldApplication(SewerageConnectionRequest sewerageConnectionRequest) {
+		if (isApplicableForOldApplicationUpdate(sewerageConnectionRequest)) {
 			String currentModifiedApplicationNo = sewerageConnectionRequest.getSewerageConnection().getApplicationNo();
 			List<SewerageConnection> sewerageConnectionList = getAllSewerageApplications(sewerageConnectionRequest);
 
@@ -275,4 +374,33 @@ public class SewerageServiceImpl implements SewerageService {
 			}
 		}
 	}
+
+	/**
+	 * Checking when to update the oldApplication flag
+	 * @param waterConnectionRequest
+	 * @return
+	 */
+	private boolean isApplicableForOldApplicationUpdate(SewerageConnectionRequest sewerageConnectionRequest) {
+		boolean isApplicable = false;
+		if(sewerageConnectionRequest.getSewerageConnection().getProcessInstance().getAction().equalsIgnoreCase(APPROVE_CONNECTION)) {
+			isApplicable = true;
+		}
+		if(SWConstants.ACTION_DISCONNECT_CONNECTION.equals(sewerageConnectionRequest.getSewerageConnection().getProcessInstance().getAction())) {
+			isApplicable = true;
+		}
+		if(SWConstants.SEWERAGE_RECONNECTION.equals(sewerageConnectionRequest.getSewerageConnection().getApplicationType())
+				&& SWConstants.ACTIVATE_CONNECTION.equals(sewerageConnectionRequest.getSewerageConnection().getProcessInstance().getAction())) {
+			isApplicable = true;
+		}
+		if(SWConstants.CONNECTION_OWNERSHIP_CHANGE.equals(sewerageConnectionRequest.getSewerageConnection().getApplicationType())
+						&& SWConstants.ACTION_PAY.equals(sewerageConnectionRequest.getSewerageConnection().getProcessInstance().getAction())) {
+			isApplicable = true;
+		}
+		if(SWConstants.ACTION_CLOSE_CONNECTION.equals(sewerageConnectionRequest.getSewerageConnection().getProcessInstance().getAction())) {
+			isApplicable = true;
+		}
+		
+		return isApplicable;
+	}
+	
 }

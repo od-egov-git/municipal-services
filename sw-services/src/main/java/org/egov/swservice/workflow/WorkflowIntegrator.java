@@ -4,7 +4,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.jayway.jsonpath.DocumentContext;
+import com.jayway.jsonpath.JsonPath;
+import com.jayway.jsonpath.PathNotFoundException;
+
 import org.egov.swservice.config.SWConfiguration;
+import org.egov.swservice.util.SWConstants;
 import org.egov.swservice.util.SewerageServicesUtil;
 import org.egov.swservice.web.models.Property;
 import org.egov.swservice.web.models.SewerageConnection;
@@ -19,11 +25,6 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.jayway.jsonpath.DocumentContext;
-import com.jayway.jsonpath.JsonPath;
-import com.jayway.jsonpath.PathNotFoundException;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -62,7 +63,21 @@ public class WorkflowIntegrator {
 	public void callWorkFlow(SewerageConnectionRequest sewerageConnectionRequest, Property property) {
 		String wfBusinessServiceName = config.getBusinessServiceValue();
 		if(servicesUtil.isModifyConnectionRequest(sewerageConnectionRequest)){
-			wfBusinessServiceName = config.getModifySWBusinessServiceName();
+			if (sewerageConnectionRequest.getSewerageConnection().getApplicationType().equalsIgnoreCase(SWConstants.MODIFY_SEWERAGE_CONNECTION))
+				wfBusinessServiceName = config.getModifySWBusinessServiceName();
+
+			if (sewerageConnectionRequest.getSewerageConnection().getApplicationType().equalsIgnoreCase(SWConstants.DISCONNECT_SEWERAGE_CONNECTION))
+				wfBusinessServiceName = config.getDisconnectSWBusinessServiceName();
+
+			if (sewerageConnectionRequest.getSewerageConnection().getApplicationType().equalsIgnoreCase(SWConstants.CLOSE_SEWERAGE_CONNECTION))
+				wfBusinessServiceName = config.getCloseSWBusinessServiceName();
+			
+			if (sewerageConnectionRequest.getSewerageConnection().getApplicationType().equalsIgnoreCase(SWConstants.SEWERAGE_RECONNECTION))
+				wfBusinessServiceName = config.getWsWorkflowReconnectionName();
+			
+			if (sewerageConnectionRequest.getSewerageConnection().getApplicationType().equalsIgnoreCase(SWConstants.CONNECTION_OWNERSHIP_CHANGE))
+				wfBusinessServiceName = config.getWsWorkflowownershipChangeName();
+			
 		}
 		SewerageConnection connection = sewerageConnectionRequest.getSewerageConnection();
 		ProcessInstance processInstance = ProcessInstance.builder()

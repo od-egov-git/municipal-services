@@ -46,8 +46,7 @@ public class CalculationService {
 			CalculationCriteria criteria = CalculationCriteria.builder()
 					.applicationNo(request.getWaterConnection().getApplicationNo())
 					.waterConnection(request.getWaterConnection()).tenantId(property.getTenantId()).build();
-			CalculationReq calRequest = CalculationReq.builder().calculationCriteria(Arrays.asList(criteria))
-					.requestInfo(request.getRequestInfo()).isconnectionCalculation(false).build();
+			CalculationReq calRequest = generateCalculationRequest(request, criteria);
 			try {
 				Object response = serviceRequestRepository.fetchResult(waterServiceUtil.getCalculatorURL(), calRequest);
 				CalculationRes calResponse = mapper.convertValue(response, CalculationRes.class);
@@ -57,5 +56,20 @@ public class CalculationService {
 			}
 		}
 
+	}
+
+	private CalculationReq generateCalculationRequest(WaterConnectionRequest request, CalculationCriteria criteria) {
+		CalculationReq calRequest = null;
+		if(request.getWaterConnection().getApplicationType().equalsIgnoreCase(WCConstants.WATER_RECONNECTION)) {
+			calRequest = CalculationReq.builder().calculationCriteria(Arrays.asList(criteria))
+					.requestInfo(request.getRequestInfo()).isconnectionCalculation(false).isReconnectionCalculation(true).isOwnershipChangeCalculation(false).build();
+		} else if(request.getWaterConnection().getApplicationType().equalsIgnoreCase(WCConstants.CONNECTION_OWNERSHIP_CHANGE)) {
+			calRequest = CalculationReq.builder().calculationCriteria(Arrays.asList(criteria))
+					.requestInfo(request.getRequestInfo()).isconnectionCalculation(false).isReconnectionCalculation(false).isOwnershipChangeCalculation(true).build();
+		} else {
+			calRequest = CalculationReq.builder().calculationCriteria(Arrays.asList(criteria))
+					.requestInfo(request.getRequestInfo()).isconnectionCalculation(false).isReconnectionCalculation(false).isOwnershipChangeCalculation(false).build();
+		}
+		return calRequest;
 	}
 }

@@ -30,6 +30,8 @@ public class BPACalculatorConstants {
 	public static final String MDMS_BPA4 = "BPA4";
 	
 	public static final String MDMS_BPA_LOW = "BPA_LOW";
+	
+	public static final String RISK_TYPE_LOW = "LOW";
 
 	public static final String MDMS_CALCULATIONTYPE_FINANCIALYEAR = "financialYear";
 

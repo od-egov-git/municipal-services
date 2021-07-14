@@ -10,6 +10,7 @@ import org.egov.waterconnection.constants.WCConstants;
 import org.egov.waterconnection.service.MeterInfoValidator;
 import org.egov.waterconnection.service.PropertyValidator;
 import org.egov.waterconnection.service.WaterFieldValidator;
+import org.egov.waterconnection.web.models.Connection.StatusEnum;
 import org.egov.waterconnection.web.models.ValidatorResult;
 import org.egov.waterconnection.web.models.WaterConnection;
 import org.egov.waterconnection.web.models.WaterConnectionRequest;
@@ -129,4 +130,37 @@ public class WaterConnectionValidator {
 			request.getWaterConnection().setConnectionNo(searchResult.getConnectionNo());
 		}
 	}
+
+	public void validateConnectionStatus(List<WaterConnection> previousConnectionsList,
+			WaterConnectionRequest waterConnectionRequest, int reqType) {
+		Map<String, String> errorMap = new HashMap<>();
+		WaterConnection waterConnection = previousConnectionsList.stream().filter(wc -> wc.getOldApplication().booleanValue()==false).findFirst().orElse(null);
+		if(waterConnection != null) {
+			if(reqType == WCConstants.RECONNECTION && !(waterConnection.getStatus()==StatusEnum.ACTIVE 
+					&& WCConstants.MODIFIED_FINAL_STATE_DISCONNECTED.equals(waterConnection.getApplicationStatus()))) {
+				errorMap.put("INVALID APPLICATION", "Reconnection can only be applied on a disconnected connection.");
+			}
+			if(reqType == WCConstants.OWNERSHIP_CHANGE_CONNECTION && !(waterConnection.getStatus()==StatusEnum.ACTIVE 
+					&& WCConstants.STATUS_APPROVED.equals(waterConnection.getApplicationStatus()))) {
+				errorMap.put("INVALID APPLICATION", "The ownership can be changed only for an active connection.");
+			}
+			if(reqType == WCConstants.CLOSE_CONNECTION && !(waterConnection.getStatus()==StatusEnum.ACTIVE 
+					&& (WCConstants.MODIFIED_FINAL_STATE_DISCONNECTED.equals(waterConnection.getApplicationStatus()))
+					|| WCConstants.STATUS_APPROVED.equals(waterConnection.getApplicationStatus()))) {
+				errorMap.put("INVALID APPLICATION", "The connection is either in workflow or already closed");
+			} 
+			if(reqType == WCConstants.DISCONNECT_CONNECTION && !(waterConnection.getStatus()==StatusEnum.ACTIVE 
+					&& (WCConstants.STATUS_APPROVED.equals(waterConnection.getApplicationStatus())))) {
+				errorMap.put("INVALID APPLICATION", "The connection is either in workflow or already closed");
+			}
+			if(reqType == WCConstants.MODIFY_CONNECTION && (WCConstants.MODIFIED_FINAL_STATE_DISCONNECTED.equals(waterConnection.getApplicationStatus())
+						|| WCConstants.MODIFIED_FINAL_STATE_CONNECTION_CLOSED.equals(waterConnection.getApplicationStatus()))) {
+				errorMap.put("INVALID APPLICATION", "The connection is either disconnected or already closed");
+			}
+		}
+		
+		if (!CollectionUtils.isEmpty(errorMap))
+			throw new CustomException(errorMap);
+	}
+
 }

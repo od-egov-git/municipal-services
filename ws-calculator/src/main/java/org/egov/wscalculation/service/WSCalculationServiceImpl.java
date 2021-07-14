@@ -88,7 +88,15 @@ public class WSCalculationServiceImpl implements WSCalculationService {
 		List<Calculation> calculations;
 
 		Map<String, Object> masterMap;
-		if (request.getIsconnectionCalculation()) {
+		if (request.getIsReconnectionCalculation()) {
+			masterMap = masterDataService.loadMasterData(request.getRequestInfo(),
+					request.getCalculationCriteria().get(0).getTenantId());
+			calculations = getReconnectionFeeCalculation(request, masterMap);
+		} else if (request.getIsOwnershipChangeCalculation()) {
+			masterMap = masterDataService.loadMasterData(request.getRequestInfo(),
+					request.getCalculationCriteria().get(0).getTenantId());
+			calculations = getOwnershipChangeFeeCalculation(request, masterMap);
+		} else if (request.getIsconnectionCalculation()) {
 			//Calculate and create demand for connection
 			masterMap = masterDataService.loadMasterData(request.getRequestInfo(),
 					request.getCalculationCriteria().get(0).getTenantId());
@@ -103,8 +111,7 @@ public class WSCalculationServiceImpl implements WSCalculationService {
 		unsetWaterConnection(calculations);
 		return calculations;
 	}
-	
-	
+
 	/**
 	 * 
 	 * 
@@ -342,6 +349,30 @@ public class WSCalculationServiceImpl implements WSCalculationService {
 				.applicationNO(adhocTaxReq.getDemandId()).taxHeadEstimates(estimates).build();
 		List<Calculation> calculations = Collections.singletonList(calculation);
 		return demandService.updateDemandForAdhocTax(adhocTaxReq.getRequestInfo(), calculations);
+	}
+	
+	
+	private List<Calculation> getOwnershipChangeFeeCalculation(CalculationReq request, Map<String, Object> masterMap) {
+		List<Calculation> calculations = new ArrayList<>(request.getCalculationCriteria().size());
+		for (CalculationCriteria criteria : request.getCalculationCriteria()) {
+			Map<String, List> estimationMap = estimationService.getOwnershipChangeFeeEstimation(criteria, request.getRequestInfo());
+			masterDataService.enrichBillingPeriodForFee(masterMap);
+			Calculation calculation = getCalculation(request.getRequestInfo(), criteria, estimationMap, masterMap, false);
+			calculations.add(calculation);
+		}
+		return calculations;
+	}
+
+
+	private List<Calculation> getReconnectionFeeCalculation(CalculationReq request, Map<String, Object> masterMap) {
+		List<Calculation> calculations = new ArrayList<>(request.getCalculationCriteria().size());
+		for (CalculationCriteria criteria : request.getCalculationCriteria()) {
+			Map<String, List> estimationMap = estimationService.getReconnectionFeeEstimation(criteria, request.getRequestInfo());
+			masterDataService.enrichBillingPeriodForFee(masterMap);
+			Calculation calculation = getCalculation(request.getRequestInfo(), criteria, estimationMap, masterMap, false);
+			calculations.add(calculation);
+		}
+		return calculations;
 	}
 	
 }

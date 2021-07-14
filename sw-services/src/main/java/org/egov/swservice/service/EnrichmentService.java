@@ -1,8 +1,17 @@
 package org.egov.swservice.service;
 
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.egov.common.contract.request.RequestInfo;
 import org.egov.common.contract.request.Role;
@@ -12,8 +21,17 @@ import org.egov.swservice.repository.ServiceRequestRepository;
 import org.egov.swservice.repository.SewerageDaoImpl;
 import org.egov.swservice.util.SWConstants;
 import org.egov.swservice.util.SewerageServicesUtil;
-import org.egov.swservice.web.models.*;
+import org.egov.swservice.web.models.AuditDetails;
+import org.egov.swservice.web.models.Connection;
 import org.egov.swservice.web.models.Connection.StatusEnum;
+import org.egov.swservice.web.models.OwnerInfo;
+import org.egov.swservice.web.models.Property;
+import org.egov.swservice.web.models.PropertyCriteria;
+import org.egov.swservice.web.models.RequestInfoWrapper;
+import org.egov.swservice.web.models.SearchCriteria;
+import org.egov.swservice.web.models.SewerageConnection;
+import org.egov.swservice.web.models.SewerageConnectionRequest;
+import org.egov.swservice.web.models.Status;
 import org.egov.swservice.web.models.Idgen.IdResponse;
 import org.egov.swservice.web.models.users.User;
 import org.egov.swservice.web.models.users.UserDetailResponse;
@@ -22,11 +40,9 @@ import org.egov.tracer.model.CustomException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.util.StringUtils;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.util.StringUtils;
 
 @Service
 @Slf4j
@@ -78,8 +94,7 @@ public class EnrichmentService {
 		additionalDetail.put(SWConstants.APP_CREATED_DATE, BigDecimal.valueOf(System.currentTimeMillis()));
 		sewerageConnectionRequest.getSewerageConnection().setAdditionalDetails(additionalDetail);
 		// Setting ApplicationType
-		sewerageConnectionRequest.getSewerageConnection().setApplicationType(
-				reqType == SWConstants.CREATE_APPLICATION ? SWConstants.NEW_SEWERAGE_CONNECTION : SWConstants.MODIFY_SEWERAGE_CONNECTION);
+		setApplicationType(sewerageConnectionRequest, reqType);
 		setSewarageApplicationIdgenIds(sewerageConnectionRequest);
 		setStatusForCreate(sewerageConnectionRequest);
 
@@ -92,6 +107,23 @@ public class EnrichmentService {
 				roadCuttingInfo.setAuditDetails(auditDetails);
 			});
 		}
+	}
+
+	private void setApplicationType(SewerageConnectionRequest sewerageConnectionRequest, int reqType) {
+		if (reqType == SWConstants.MODIFY_CONNECTION) {
+			sewerageConnectionRequest.getSewerageConnection().setApplicationType(SWConstants.MODIFY_SEWERAGE_CONNECTION);
+		} else if (reqType == SWConstants.DISCONNECT_CONNECTION) {
+			sewerageConnectionRequest.getSewerageConnection().setApplicationType(SWConstants.DISCONNECT_SEWERAGE_CONNECTION);
+		} else if (reqType == SWConstants.RECONNECTION) {
+			sewerageConnectionRequest.getSewerageConnection().setApplicationType(SWConstants.SEWERAGE_RECONNECTION);
+		} else if (reqType == SWConstants.OWNERSHIP_CHANGE_CONNECTION) {
+			sewerageConnectionRequest.getSewerageConnection().setApplicationType(SWConstants.CONNECTION_OWNERSHIP_CHANGE);
+		} else if (reqType == SWConstants.CLOSE_CONNECTION) {
+			sewerageConnectionRequest.getSewerageConnection().setApplicationType(SWConstants.CLOSE_SEWERAGE_CONNECTION);
+		} else {
+			sewerageConnectionRequest.getSewerageConnection().setApplicationType(SWConstants.NEW_SEWERAGE_CONNECTION);
+		}
+		
 	}
 
 	@SuppressWarnings("unchecked")

@@ -41,6 +41,12 @@ public class CalculationReq  {
 		 * 
 		 */
         private Boolean isconnectionCalculation;
+		
+		@JsonProperty("isReconnectionCalculation")
+		private Boolean isReconnectionCalculation;
+		
+		@JsonProperty("isOwnershipChangeCalculation")
+		private Boolean isOwnershipChangeCalculation;
 
         @Valid
         @NotNull

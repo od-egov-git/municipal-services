@@ -2,6 +2,7 @@ package org.egov.swservice.service;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.egov.swservice.util.SWConstants;
 import org.egov.swservice.web.models.RoadCuttingInfo;
@@ -62,8 +63,10 @@ public class SewerageFieldValidator implements SewerageActionValidator {
 	}
 
 	public void validateModifyRequest(SewerageConnectionRequest sewerageConnectionRequest, Map<String, String> errorMap) {
+		boolean isEmployee = sewerageConnectionRequest.getRequestInfo().getUserInfo().getRoles().stream().map(role -> role.getCode()).collect(Collectors.toList()).contains(SWConstants.ROLE_EMPLOYEE);
 		if (SWConstants.APPROVE_CONNECTION.equalsIgnoreCase(
-				sewerageConnectionRequest.getSewerageConnection().getProcessInstance().getAction())) {
+				sewerageConnectionRequest.getSewerageConnection().getProcessInstance().getAction())
+				&& isEmployee) {
 			if (StringUtils.isEmpty(sewerageConnectionRequest.getSewerageConnection().getConnectionType())) {
 				errorMap.put("INVALID_SEWERAGE_CONNECTION_TYPE", "Connection type should not be empty");
 			}
@@ -87,16 +90,17 @@ public class SewerageFieldValidator implements SewerageActionValidator {
 
 			}
 		}
-		if (SWConstants.SUBMIT_APPLICATION_CONST
-				.equals(sewerageConnectionRequest.getSewerageConnection().getProcessInstance().getAction())
-				|| SWConstants.APPROVE_CONNECTION.equalsIgnoreCase(
-				sewerageConnectionRequest.getSewerageConnection().getProcessInstance().getAction())) {
-			if (sewerageConnectionRequest.getSewerageConnection().getDateEffectiveFrom() == null
-					|| sewerageConnectionRequest.getSewerageConnection().getDateEffectiveFrom() < 0
-					|| sewerageConnectionRequest.getSewerageConnection().getDateEffectiveFrom() == 0) {
-				errorMap.put("INVALID_DATE_EFFECTIVE_FROM", "Date effective from cannot be null or negative");
+			if ((SWConstants.SUBMIT_APPLICATION_CONST
+					.equals(sewerageConnectionRequest.getSewerageConnection().getProcessInstance().getAction())
+					|| SWConstants.APPROVE_CONNECTION.equalsIgnoreCase(
+					sewerageConnectionRequest.getSewerageConnection().getProcessInstance().getAction()))
+					&& isEmployee) {
+				if (sewerageConnectionRequest.getSewerageConnection().getDateEffectiveFrom() == null
+						|| sewerageConnectionRequest.getSewerageConnection().getDateEffectiveFrom() < 0
+						|| sewerageConnectionRequest.getSewerageConnection().getDateEffectiveFrom() == 0) {
+					errorMap.put("INVALID_DATE_EFFECTIVE_FROM", "Date effective from cannot be null or negative");
+				}
 			}
-		}
 	}
 
 }

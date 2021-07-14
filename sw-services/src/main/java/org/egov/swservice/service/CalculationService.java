@@ -6,6 +6,7 @@ import java.util.List;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.egov.swservice.repository.ServiceRequestRepository;
+import org.egov.swservice.util.SWConstants;
 import org.egov.swservice.util.SewerageServicesUtil;
 import org.egov.swservice.web.models.CalculationCriteria;
 import org.egov.swservice.web.models.CalculationReq;
@@ -48,8 +49,7 @@ public class CalculationService {
 					.applicationNo(request.getSewerageConnection().getApplicationNo())
 					.sewerageConnection(request.getSewerageConnection()).tenantId(property.getTenantId()).build();
 			List<CalculationCriteria> calculationCriterias = Arrays.asList(criteria);
-			CalculationReq calRequest = CalculationReq.builder().calculationCriteria(calculationCriterias)
-					.requestInfo(request.getRequestInfo()).isconnectionCalculation(false).build();
+			CalculationReq calRequest = generateCalculationRequest(request, calculationCriterias);
 			try {
 				Object response = serviceRequestRepository.fetchResult(uri, calRequest);
 				CalculationRes calResponse = mapper.convertValue(response, CalculationRes.class);
@@ -60,5 +60,21 @@ public class CalculationService {
 			}
 		}
 
+	}
+
+	private CalculationReq generateCalculationRequest(SewerageConnectionRequest request,
+			List<CalculationCriteria> calculationCriterias) {
+		CalculationReq calRequest = null;
+		if(request.getSewerageConnection().getApplicationType().equalsIgnoreCase(SWConstants.SEWERAGE_RECONNECTION)) {
+			calRequest = CalculationReq.builder().calculationCriteria(calculationCriterias)
+					.requestInfo(request.getRequestInfo()).isconnectionCalculation(false).isReconnectionCalculation(true).isOwnershipChangeCalculation(false).build();
+		} else if(request.getSewerageConnection().getApplicationType().equalsIgnoreCase(SWConstants.CONNECTION_OWNERSHIP_CHANGE)) {
+			calRequest = CalculationReq.builder().calculationCriteria(calculationCriterias)
+					.requestInfo(request.getRequestInfo()).isconnectionCalculation(false).isReconnectionCalculation(false).isOwnershipChangeCalculation(true).build();
+		} else {
+			calRequest = CalculationReq.builder().calculationCriteria(calculationCriterias)
+					.requestInfo(request.getRequestInfo()).isconnectionCalculation(false).isReconnectionCalculation(false).isOwnershipChangeCalculation(false).build();
+		}
+		return calRequest;
 	}
 }

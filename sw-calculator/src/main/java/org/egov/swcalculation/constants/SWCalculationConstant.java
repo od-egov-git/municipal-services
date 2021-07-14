@@ -80,6 +80,10 @@ public class SWCalculationConstant {
 	public static final String SW_WATER_CESS = "SW_SEWERAGE_CESS";
 
 	public static final String SW_CHARGE = "SW_CHARGE";
+	
+	public static final String SW_RECONNECTION_CHARGE = "SW_RECONNECTION_CHARGE";
+	
+	public static final String SW_OWNERSHIP_CHANGE_FEE = "SW_OWNERSHIP_CHANGE_FEE";
 
 	/**
 	 * data fields
